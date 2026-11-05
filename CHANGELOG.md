@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-11-05
+
+### Fixed
+- Live requests: the right-hand details column now scrolls on its own, and "Slowest queries"
+  shows up to 140 characters of each query (wrapped) with the full query on hover.
+
 ## [0.1.1] - 2026-11-05
 
 ### Fixed

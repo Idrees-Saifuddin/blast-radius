@@ -175,6 +175,8 @@ body.live-tab .flow-only { display: none !important; }
 .wf-row .tag.bad { color: var(--bad); border-color: var(--bad); }
 .wf-row .tag.okq { color: var(--query); border-color: var(--query); }
 .wf-note { color: var(--muted); font-size: 12px; padding: 6px 8px; }
+#live-detail { overflow: auto; min-height: 0; padding: 10px; border-left: 1px solid var(--line); }
+#live-detail td.sql { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; overflow-wrap: anywhere; }
 #live-detail details { margin: 10px 0; }
 #live-detail summary { cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .wf-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 6px 0; }
@@ -1187,8 +1189,8 @@ body.live-tab .flow-only { display: none !important; }
       var table = el('table');
       table.appendChild(headRow(['Query', 'Rows', 'Time']));
       order.forEach(function (i) {
-        var q = rec.queries[i], tr = el('tr'), td = el('td');
-        var a = el('a', { tabindex: '0' }, q.sql.replace(/\s+/g, ' ').slice(0, 40));
+        var q = rec.queries[i], tr = el('tr'), td = el('td', { class: 'sql' }), sql = q.sql.replace(/\s+/g, ' ').trim();
+        var a = el('a', { tabindex: '0', title: sql + '\n\nClick for the full query and the line of your code that ran it.' }, sql.length > 140 ? sql.slice(0, 140) + '…' : sql);
         a.addEventListener('click', function () { live.sel = { t: 'query', i: i }; renderStage(); renderDetail(); });
         td.appendChild(a);
         tr.appendChild(td);

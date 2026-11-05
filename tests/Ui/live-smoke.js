@@ -202,6 +202,9 @@ const text = (node) => (node ? node.textContent : '');
   check(/Directories hit/.test(d4) && /app\/Services/.test(d4) && /Slowest functions/.test(d4) && /Slowest queries/.test(d4) && /Models loaded/.test(d4) && /Sale/.test(d4), 'overview: lists slowest queries and functions, directories and models');
   check(doc.querySelectorAll('#live-detail details').length >= 2 && [...doc.querySelectorAll('#live-detail details')].every((d) => !d.open), 'overview: the extras are collapsed by default');
   check(/Own time/.test(text(doc.getElementById('live-detail'))) && /Rows/.test(text(doc.getElementById('live-detail'))), 'overview: tables have column headings');
+  const sqlLink = doc.querySelector('#live-detail td.sql a');
+  check(sqlLink && sqlLink.getAttribute('title').startsWith('select * from sales where day > ?'), 'overview: hovering a query shows it in full');
+  check(w.getComputedStyle(doc.getElementById('live-detail')).overflow === 'auto', 'overview: the details column scrolls on its own');
 
   // filters
   const failuresOnly = () => [...doc.querySelectorAll('#req-chips button')].find((c) => /Failures only/.test(text(c)));
