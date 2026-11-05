@@ -318,6 +318,12 @@ final class RequestRecorder
             return [is_string($path) && $path !== '' ? $path : '/', $origin];
         }
 
+        // A server-rendered page opened from a link: its Referer is the page the user came
+        // from, but it is a page of its own, not a call made by that page.
+        if (self::isPageLoad($request)) {
+            return ['/'.ltrim($request->path(), '/'), $request->getSchemeAndHttpHost()];
+        }
+
         if (! is_array($parts) || $origin === null) {
             return [null, null];
         }
@@ -329,6 +335,31 @@ final class RequestRecorder
         }
 
         return [$path, $origin];
+    }
+
+    /**
+     * A GET the browser made to show a whole page (typing the address, a link, a redirect),
+     * as opposed to fetch/XHR, Livewire, assets or a frame. Browsers say so in Sec-Fetch-*;
+     * where they don't (plain http on a LAN address) an HTML Accept header without the AJAX
+     * markers is the same signal. Form posts stay with the page that holds the form.
+     */
+    private static function isPageLoad(Request $request): bool
+    {
+        if ($request->method() !== 'GET') {
+            return false;
+        }
+
+        $mode = $request->headers->get('sec-fetch-mode');
+
+        if (is_string($mode) && $mode !== '') {
+            return $mode === 'navigate' && in_array($request->headers->get('sec-fetch-dest'), [null, '', 'document'], true);
+        }
+
+        if ($request->headers->has('x-requested-with') || $request->headers->has('x-livewire')) {
+            return false;
+        }
+
+        return str_starts_with(strtolower((string) $request->headers->get('accept')), 'text/html');
     }
 
     /**

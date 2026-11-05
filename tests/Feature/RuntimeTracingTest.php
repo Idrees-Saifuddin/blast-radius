@@ -169,6 +169,42 @@ final class RuntimeTracingTest extends TestCase
      * @preserveGlobalState disabled
      */
     #[RunInSeparateProcess]
+    public function test_a_page_opened_from_a_link_is_its_own_page_not_a_call_of_the_previous_one(): void
+    {
+        $from = ['Referer' => 'http://localhost/admin/daily-report'];
+        $navigate = ['Sec-Fetch-Mode' => 'navigate', 'Sec-Fetch-Dest' => 'document'];
+
+        // a sidebar link in a server-rendered app
+        $this->get('/api/dashboard', $from + $navigate);
+        // fetch() from that page
+        $this->get('/api/dashboard', $from + ['Sec-Fetch-Mode' => 'cors', 'Sec-Fetch-Dest' => 'empty', 'Accept' => '*/*']);
+        // an iframe navigates too, but it is part of the page around it
+        $this->get('/api/dashboard', $from + ['Sec-Fetch-Mode' => 'navigate', 'Sec-Fetch-Dest' => 'iframe']);
+        // plain http on a LAN address sends no Sec-Fetch headers: an HTML Accept decides
+        $this->get('/api/dashboard', $from + ['Accept' => 'text/html,application/xhtml+xml']);
+        // ... unless it is AJAX
+        $this->get('/api/dashboard', $from + ['Accept' => 'text/html', 'X-Requested-With' => 'XMLHttpRequest']);
+        // a submitted form belongs to the page that holds the form
+        $this->post('/api/dashboard', [], $from + $navigate);
+
+        $pages = array_map(fn (array $r) => [$r['method'], $r['page'], $r['pageOrigin']], array_reverse($this->store()->list()));
+
+        $this->assertSame([
+            ['GET', '/api/dashboard', 'http://localhost'],
+            ['GET', '/admin/daily-report', 'http://localhost'],
+            ['GET', '/admin/daily-report', 'http://localhost'],
+            ['GET', '/api/dashboard', 'http://localhost'],
+            ['GET', '/admin/daily-report', 'http://localhost'],
+            ['POST', '/admin/daily-report', 'http://localhost'],
+        ], $pages);
+    }
+
+    /**
+     * @runInSeparateProcess
+     *
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
     public function test_a_failing_query_names_the_query_the_function_and_the_error(): void
     {
         $this->withHeaders(['Referer' => 'http://localhost:3000/reports'])->getJson('/api/broken')->assertStatus(500);

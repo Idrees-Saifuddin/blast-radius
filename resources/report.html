@@ -919,7 +919,8 @@ body.live-tab .flow-only { display: none !important; }
     sub.appendChild(el('span', { class: 'st ' + stClass(rec.status) }, String(rec.status)));
     sub.appendChild(el('span', null, fmtMs(rec.ms) + ' total'));
     if (rec.action) { sub.appendChild(el('span', null, rec.action.replace(/^.*\\/, ''))); }
-    if (rec.page) { sub.appendChild(el('span', { class: 'badge' }, 'from page ' + (rec.pageOrigin ? hostOf(rec.pageOrigin) : '') + rec.page)); }
+    if (rec.page && rec.page === rec.path && rec.method === 'GET') { sub.appendChild(el('span', { class: 'badge' }, 'page load')); }
+    else if (rec.page) { sub.appendChild(el('span', { class: 'badge' }, 'from page ' + (rec.pageOrigin ? hostOf(rec.pageOrigin) : '') + rec.page)); }
     else if (rec.pageOrigin) { sub.appendChild(el('span', { class: 'badge' }, 'page unknown (' + hostOf(rec.pageOrigin) + ')')); }
     sub.appendChild(el('span', null, rec.spans.length + (rec.dropped ? '+' : '') + ' functions timed \u00b7 ' + rec.memory + ' MB peak'));
     var entryIndex = flowEntryFor(rec);

@@ -4,7 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - unreleased
+## [0.1.1] - 2026-11-05
+
+### Fixed
+- Live requests: in server-rendered apps (Blade, Livewire), a page opened from a link was listed
+  as a call of the page you came from, because its `Referer` is the previous page. A full page
+  load now starts its own page; fetch/XHR, Livewire, asset and iframe requests and form posts
+  stay with the page that made them. Page loads are labelled "page load".
+
+## [0.1.0] - 2026-11-05
 
 First release.
 
