@@ -1,0 +1,14 @@
+parameters:
+    level: 8
+    # Laravel's doc comments describe the usual case; some of our checks are deliberately defensive
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/Fixtures (?)
+    ignoreErrors:
+        # the instrumenter tests define classes at run time from rewritten source
+        -
+            identifier: class.notFound
+            path: tests/Unit/Runtime/InstrumenterTest.php

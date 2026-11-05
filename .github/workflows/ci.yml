@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-stan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --memory-limit=1G
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.1', laravel: '8.*', testbench: '^6.0' }
+          - { php: '8.1', laravel: '9.*', testbench: '^7.0' }
+          - { php: '8.1', laravel: '10.*', testbench: '^8.0' }
+          - { php: '8.2', laravel: '10.*', testbench: '^8.0' }
+          - { php: '8.2', laravel: '11.*', testbench: '^9.0' }
+          - { php: '8.2', laravel: '12.*', testbench: '^10.0' }
+          - { php: '8.3', laravel: '10.*', testbench: '^8.0' }
+          - { php: '8.3', laravel: '11.*', testbench: '^9.0' }
+          - { php: '8.3', laravel: '12.*', testbench: '^10.0' }
+          - { php: '8.4', laravel: '11.*', testbench: '^9.0' }
+          - { php: '8.4', laravel: '12.*', testbench: '^10.0' }
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: pcov
+          tools: composer
+      - run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update --dev
+          # Old Laravel releases have published security advisories, which Composer blocks by default.
+          # This job only checks that our package works on them.
+          composer update --prefer-dist --no-interaction --no-security-blocking
+      - run: vendor/bin/phpunit
+
+  report-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: composer install --no-interaction --prefer-dist
+      - run: php tests/Ui/make-samples.php "$RUNNER_TEMP/samples"
+      - run: |
+          cd tests/Ui
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund jsdom@24
+          node smoke.js "$RUNNER_TEMP/samples"
+          node live-smoke.js "$RUNNER_TEMP/samples"

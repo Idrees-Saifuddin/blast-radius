@@ -1,0 +1,11 @@
+/vendor/
+/.blastradius/
+.phpunit.cache/
+.env
+CAREER.md
+TODO.md
+composer.lock
+node_modules/
+tests/Ui/package.json
+tests/Ui/package-lock.json
+CLAUDE.md

@@ -1,0 +1,69 @@
+{
+    "name": "idrees-saifuddin/blast-radius",
+    "description": "Tells you what a change can break in a Laravel app: affected routes, jobs, events and the tests to run, with confidence levels.",
+    "keywords": [
+        "laravel",
+        "php",
+        "static-analysis",
+        "call-graph",
+        "impact-analysis",
+        "test-impact-analysis"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/Idrees-Saifuddin/blast-radius",
+    "support": {
+        "issues": "https://github.com/Idrees-Saifuddin/blast-radius/issues",
+        "source": "https://github.com/Idrees-Saifuddin/blast-radius"
+    },
+    "type": "library",
+    "authors": [
+        {
+            "name": "Idrees Saifuddin"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*",
+        "nikic/php-parser": "^5.0",
+        "symfony/console": "^5.4 || ^6.0 || ^7.0",
+        "laravel/framework": "^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^9.6 || ^10.5 || ^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BlastRadius\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BlastRadius\\Tests\\": "tests/",
+            "Fixture\\App\\": "tests/Fixtures/LaravelApp/app/"
+        }
+    },
+    "bin": [
+        "bin/blast"
+    ],
+    "scripts": {
+        "test": "phpunit",
+        "stan": "phpstan analyse --memory-limit=1G",
+        "lint": "pint --test"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BlastRadius\\Laravel\\BlastRadiusServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
