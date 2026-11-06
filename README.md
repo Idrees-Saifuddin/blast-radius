@@ -105,6 +105,16 @@ DashboardController::index                                       180 ms
 
 A "How to read this" button in the sidebar explains the three panels.
 
+**Is the trace complete?** The header of each request says how many of your classes were timed
+("all 41 classes timed"). If a class ran without being timed, because BlastRadius could not rewrite
+its file, a warning (`⚠ 1 class not timed`) opens a list with the reason. The time that class took
+is counted inside whatever called it, so the warning tells you when the timeline has gaps.
+
+Service providers and other classes PHP loads while the application boots are loaded before timing
+can start. That is normal in every app, so it is a quiet note (`38 timed · 6 loaded at boot`) with
+an optional list, not a warning. Interfaces and classes without methods have nothing to time and are
+not listed.
+
 **If your frontend and API are on different addresses** (page on `localhost:3000`, API on
 `localhost`), browsers send only the site address in the `Referer` header, not the page. BlastRadius
 then shows "(page unknown)" and a hint. Add this line inside `<head>` of your frontend's `index.html`
@@ -273,6 +283,9 @@ keep (`runtime.keep`, default 300, and `runtime.keep_per_route`, default 30, so 
 BlastRadius is static analysis plus what it observes. It tells you where to look; it is not a proof
 that nothing else breaks.
 
+- **Live timing covers the classes in your `app` folder** (`runtime.paths`), not vendor packages, and
+  classes loaded before BlastRadius starts timing (service providers) run untimed; the request header
+  tells you which.
 - **Dynamic code is reported, not followed:** `$this->$method()`, `call_user_func`, `new $class`,
   string callables appear as UNRESOLVED.
 - **Untyped calls are guesses** (POSSIBLE), up to a limit. Methods the framework calls itself (a cast's

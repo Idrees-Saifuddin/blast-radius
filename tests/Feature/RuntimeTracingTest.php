@@ -131,6 +131,13 @@ final class RuntimeTracingTest extends TestCase
 
         $this->assertContains('app/Http/Controllers/DashboardController.php', $record['files']);
         $this->assertContains('app/Services/DashboardService.php', $record['files']);
+
+        $timing = $record['timing'];
+        $untimed = array_column($timing['untimed'], 'file');
+        $this->assertGreaterThanOrEqual(2, $timing['timed'], 'the controller and the service ran as timed copies');
+        $this->assertSame(count($untimed), $timing['untimedTotal']);
+        $this->assertSame(count($timing['early']), $timing['earlyTotal']);
+        $this->assertNotContains('app/Services/DashboardService.php', $untimed, 'a class that was timed is not reported as untimed');
     }
 
     /**

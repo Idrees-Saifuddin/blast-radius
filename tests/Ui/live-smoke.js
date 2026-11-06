@@ -37,6 +37,7 @@ const details = {
       { sql: 'select * from personal_access_tokens where id = ?', kind: 'select', ms: 5.9, at: 0.2, ok: true, rows: 1, rowsKind: 'returned', error: null, bindings: 1, connection: 'mysql', span: -1, caller: null },
     ],
     models: { 'App\\Models\\Product': 10 }, exceptions: [], files: [], locations: {},
+    timing: { timed: 12, untimed: [{ file: 'app/Legacy/Weird.php', reason: 'parse' }], untimedTotal: 1, early: [{ file: 'app/Providers/AppServiceProvider.php', reason: 'early' }], earlyTotal: 1 },
   },
   7: {
     id: 7, at: '2026-11-05T10:00:07+00:00', method: 'GET', path: '/api/notifications/unread-count', uri: '/api/notifications/unread-count', route: '/api/notifications/unread-count', action: null,
@@ -55,6 +56,7 @@ const details = {
       { sql: 'select count(*) from sales', kind: 'select', ms: 6, at: 130, ok: true, rows: 1, rowsKind: 'returned', error: null, bindings: 0, connection: 'mysql', span: 0, caller: 'app/Http/DashboardController.php:15' },
     ],
     models: { 'App\\Models\\Sale': 120 }, exceptions: [], files: ['app/Http/DashboardController.php', 'app/Services/DashboardService.php'], locations: loc,
+    timing: { timed: 7, untimed: [], untimedTotal: 0, early: [{ file: 'app/Providers/AppServiceProvider.php', reason: 'early' }, { file: 'app/Providers/RouteServiceProvider.php', reason: 'early' }], earlyTotal: 2 },
   },
   5: {
     id: 5, at: '2026-11-05T10:00:05+00:00', method: 'GET', path: '/api/orders', uri: '/api/orders', route: '/api/orders', action: 'App\\Http\\OrderController@index',
@@ -136,6 +138,16 @@ const text = (node) => (node ? node.textContent : '');
   check(/GET \/api\/products/.test(text(stage.querySelector('h2'))), 'auto-open: the main call of the newest page is opened, not the polling');
   check(/from page localhost:3000\/dashboard\/products/.test(text(stage.querySelector('.sub'))), 'header: shows the page the call came from');
 
+  // a trace with gaps says so
+  const timingBadge = doc.getElementById('timing-badge');
+  check(!!timingBadge && /1 class not timed/.test(text(timingBadge)) && timingBadge.classList.contains('warn'), 'timing: a real gap shows a warning in the header (' + text(timingBadge) + ')');
+  click(w, timingBadge);
+  await wait(30);
+  const notTimed = text(doc.getElementById('live-detail'));
+  check(/Not timed \(1\)/.test(notTimed) && /app\/Legacy\/Weird\.php/.test(notTimed) && /could not read this file/.test(notTimed), 'timing: clicking it lists the class and why (' + notTimed.slice(0, 120).replace(/\s+/g, ' ') + ')');
+  check(doc.getElementById('not-timed').open === true, 'timing: the list of gaps is open');
+  check(/Loaded before timing started \(1\)/.test(notTimed) && doc.getElementById('early-boot').open === false, 'timing: boot-time classes are listed separately and stay collapsed');
+
   // a query that ran before the first timed function sits at its real position, not at the bottom
   const firstRows = [...stage.querySelectorAll('.wf-row .wf-label')].map((l) => text(l));
   check(/personal_access_tokens/.test(firstRows[0]) && /ProductController::index/.test(firstRows[1]), 'timeline: a query that ran before any timed function is placed first, in time order (' + firstRows.slice(0, 2).map((r) => r.replace(/\s+/g, ' ').slice(0, 40)).join(' | ') + ')');
@@ -160,6 +172,7 @@ const text = (node) => (node ? node.textContent : '');
   check(stage1.querySelectorAll('.wf-row').length >= 3, 'timeline: rows for the functions and the query');
   check([...stage1.querySelectorAll('.wf-row .tag.bad')].some((t) => /failed/.test(text(t))), 'timeline: failed functions and the failed query are tagged');
   const detail = doc.getElementById('live-detail');
+  check(!doc.getElementById('timing-badge'), 'timing: a record without timing data (older version) shows no badge');
   check(/What failed/.test(text(detail)) && /QueryException/.test(text(detail)) && /no such table: orders/.test(text(detail)), 'overview: says what failed');
   check(/app\/Services\/OrderService\.php:33/.test(text(detail)), 'overview: shows the line of your own code');
   const failing = [...detail.querySelectorAll('a')].find((a) => /OrderService::list/.test(text(a)));
@@ -200,7 +213,12 @@ const text = (node) => (node ? node.textContent : '');
   click(w, doc.querySelector('#live-detail a'));
   const d4 = text(doc.getElementById('live-detail'));
   check(/Directories hit/.test(d4) && /app\/Services/.test(d4) && /Slowest functions/.test(d4) && /Slowest queries/.test(d4) && /Models loaded/.test(d4) && /Sale/.test(d4), 'overview: lists slowest queries and functions, directories and models');
+  const bootBadge = doc.getElementById('timing-badge');
+  check(/7 timed · 2 loaded at boot/.test(text(bootBadge)) && !bootBadge.classList.contains('warn') && !doc.getElementById('not-timed'), 'timing: classes that load at boot are a quiet note, not a warning (' + text(bootBadge) + ')');
   check(doc.querySelectorAll('#live-detail details').length >= 2 && [...doc.querySelectorAll('#live-detail details')].every((d) => !d.open), 'overview: the extras are collapsed by default');
+  click(w, bootBadge);
+  await wait(30);
+  check(doc.getElementById('early-boot').open === true && /RouteServiceProvider/.test(text(doc.getElementById('early-boot'))), 'timing: clicking the note opens the list of boot-time classes');
   check(/Own time/.test(text(doc.getElementById('live-detail'))) && /Rows/.test(text(doc.getElementById('live-detail'))), 'overview: tables have column headings');
   const sqlLink = doc.querySelector('#live-detail td.sql a');
   check(sqlLink && sqlLink.getAttribute('title').startsWith('select * from sales where day > ?'), 'overview: hovering a query shows it in full');

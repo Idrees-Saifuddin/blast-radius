@@ -255,6 +255,43 @@ final class RequestRecorder
             'spans' => $spans,
             'dropped' => $trace['dropped'] + max(0, count($trace['spans']) - self::MAX_SPANS_STORED),
             'files' => self::loadedFiles(),
+            'timing' => self::timing(),
+        ];
+    }
+
+    /**
+     * Which classes were timed and which ran as they are, so a trace with gaps does not pass for
+     * a complete one. Two kinds of "as they are": `untimed` are real gaps (the file could not be
+     * rewritten or its copy was invalid); `early` classes were loaded before timing started (service
+     * providers and the like), which is normal in every app and only worth a quiet note.
+     *
+     * @return array{timed: int, untimed: list<array{file: string, reason: string}>, untimedTotal: int, early: list<array{file: string, reason: string}>, earlyTotal: int}|null
+     */
+    private static function timing(): ?array
+    {
+        $coverage = InstrumentingLoader::coverage();
+
+        if ($coverage === null) {
+            return null;
+        }
+
+        $untimed = [];
+        $early = [];
+
+        foreach ($coverage['untimed'] as $entry) {
+            $entry = ['file' => self::relative($entry['file']), 'reason' => $entry['reason']];
+
+            if ($entry['reason'] === 'early') {
+                $early[] = $entry;
+            } else {
+                $untimed[] = $entry;
+            }
+        }
+
+        return [
+            'timed' => $coverage['timed'],
+            'untimed' => array_slice($untimed, 0, 50), 'untimedTotal' => count($untimed),
+            'early' => array_slice($early, 0, 50), 'earlyTotal' => count($early),
         ];
     }
 

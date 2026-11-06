@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-11-06
+
+### Added
+- Live requests: a trace now says how complete it is. The request header shows "all N classes
+  timed", or a warning "N classes not timed" that opens a list of the classes that ran without being
+  timed and why (the rewriter could not read the file, its timed copy was invalid PHP, or the cache
+  folder was not writable). Until now such a class was silently missing from the timeline, so a trace
+  with gaps could pass for a complete one. Classes PHP loads while the app boots (service providers)
+  cannot be timed in any app; they get a quiet note ("38 timed · 6 loaded at boot") and an optional
+  list instead of a warning. Suggested by Alex Shev on DEV.
+
+### Changed
+- Files with nothing to time (interfaces, classes without methods) are remembered in the cache
+  folder, so they are no longer parsed again on every request.
+
 ## [0.1.3] - 2026-11-06
 
 ### Fixed

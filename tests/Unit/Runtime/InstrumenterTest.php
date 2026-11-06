@@ -337,4 +337,15 @@ PHP);
         $this->assertNull(Instrumenter::transform('<?php namespace A; interface I { public function m(); }', '/x.php'));
         $this->assertNull(Instrumenter::transform('<?php namespace A; class OnlyMagic { public function __construct() {} public function __get($n) {} }', '/x.php'));
     }
+
+    public function test_it_says_why_a_file_was_left_alone(): void
+    {
+        $this->assertSame('nothing', Instrumenter::inspect('<?php namespace A; interface I { public function m(); }', '/x.php')[1], 'no methods to time');
+        $this->assertSame('nothing', Instrumenter::inspect('<?php function helper() {}', '/x.php')[1]);
+        $this->assertSame('parse', Instrumenter::inspect('<?php class {', '/x.php')[1], 'the file does not parse');
+
+        [$code, $verdict] = Instrumenter::inspect('<?php namespace A; class C { public function m() {} }', '/x.php');
+        $this->assertSame('ok', $verdict);
+        $this->assertNotNull($code);
+    }
 }

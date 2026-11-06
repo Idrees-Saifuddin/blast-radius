@@ -27,21 +27,32 @@ final class Instrumenter
 {
     public static function transform(string $code, string $file): ?string
     {
+        return self::inspect($code, $file)[0];
+    }
+
+    /**
+     * Like transform(), and says why when there is nothing to return.
+     *
+     * @return array{string|null, string} the rewritten code, and 'ok'; or null with 'nothing'
+     *                                    (no methods to time: an interface, say) or 'parse' (the file does not parse)
+     */
+    public static function inspect(string $code, string $file): array
+    {
         try {
             $ast = (new ParserFactory)->createForHostVersion()->parse($code);
         } catch (Error) {
-            return null;
+            return [null, 'parse'];
         }
 
         if ($ast === null) {
-            return null;
+            return [null, 'nothing'];
         }
 
         $locator = new MethodLocator;
         (new NodeTraverser(new NameResolver, $locator))->traverse($ast);
 
         if ($locator->methods === []) {
-            return null;
+            return [null, 'nothing'];
         }
 
         $tokens = array_values(PhpToken::tokenize($code));
@@ -75,7 +86,7 @@ final class Instrumenter
             $code = substr($code, 0, $position).$replacement.substr($code, $position + $length);
         }
 
-        return $code;
+        return [$code, 'ok'];
     }
 
     /**

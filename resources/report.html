@@ -59,6 +59,8 @@ aside { border-right: 1px solid var(--line); }
 .badge.c-CONFIRMED { color: var(--ok); border-color: var(--ok); }
 .badge.c-POSSIBLE { color: var(--warn); border-color: var(--warn); }
 .badge.c-UNRESOLVED { color: var(--bad); border-color: var(--bad); }
+button.badge { background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
 .badge.untested { color: var(--bad); border-color: var(--bad); }
 .badge.changed { color: var(--changed); border-color: var(--changed); }
 #stage { position: relative; overflow: hidden; background: var(--bg); cursor: grab; }
@@ -925,6 +927,31 @@ body.live-tab .flow-only { display: none !important; }
     else if (rec.page) { sub.appendChild(el('span', { class: 'badge' }, 'from page ' + (rec.pageOrigin ? hostOf(rec.pageOrigin) : '') + rec.page)); }
     else if (rec.pageOrigin) { sub.appendChild(el('span', { class: 'badge' }, 'page unknown (' + hostOf(rec.pageOrigin) + ')')); }
     sub.appendChild(el('span', null, rec.spans.length + (rec.dropped ? '+' : '') + ' functions timed \u00b7 ' + rec.memory + ' MB peak'));
+    if (rec.timing) {
+      var gaps = rec.timing.untimedTotal, boot = rec.timing.earlyTotal, timedCount = rec.timing.timed;
+      var showList = function (id) {
+        return function () {
+          live.sel = null; renderStage(); renderDetail();
+          var section = byId(id);
+          if (section) { section.open = true; if (section.scrollIntoView) { section.scrollIntoView({ block: 'start' }); } }
+        };
+      };
+      if (gaps > 0) {
+        // a real gap: the timeline is missing something that ran
+        var warn = el('button', { type: 'button', class: 'badge warn', id: 'timing-badge', title: 'Some of your classes ran without being timed, so the timeline has gaps. Click to see which and why.' },
+          '\u26a0 ' + gaps + (gaps === 1 ? ' class' : ' classes') + ' not timed');
+        warn.addEventListener('click', showList('not-timed'));
+        sub.appendChild(warn);
+      } else if (boot > 0) {
+        // normal: service providers and the like load before timing can start
+        var note = el('button', { type: 'button', class: 'badge', id: 'timing-badge', title: boot + ' of your classes (service providers and the like) loaded before BlastRadius started timing, as in every app. Everything else was timed. Click for the list.' },
+          timedCount + ' timed \u00b7 ' + boot + ' loaded at boot');
+        note.addEventListener('click', showList('early-boot'));
+        sub.appendChild(note);
+      } else if (timedCount > 0) {
+        sub.appendChild(el('span', { class: 'badge', id: 'timing-badge', title: 'Every class of yours that ran during this request was timed.' }, 'all ' + timedCount + ' classes timed'));
+      }
+    }
     var entryIndex = flowEntryFor(rec);
     if (entryIndex >= 0) {
       var go = el('button', { type: 'button', class: 'chip' }, 'View code flow of this route');
@@ -1261,6 +1288,37 @@ body.live-tab .flow-only { display: none !important; }
       });
       md.appendChild(t4);
       box.appendChild(md);
+    }
+
+    if (rec.timing && (rec.timing.untimedTotal > 0 || rec.timing.earlyTotal > 0)) {
+      var NOT_TIMED = {
+        parse: 'BlastRadius could not read this file, so it ran as it is',
+        invalid: 'the timed copy was not valid PHP, so the original ran',
+        unwritable: 'BlastRadius could not write to its cache folder',
+        unreadable: 'BlastRadius could not read this file'
+      };
+      var untimedList = function (id, title, intro, entries, total, open, reasons) {
+        var d = el('details', { id: id });
+        d.open = open;
+        d.appendChild(el('summary', null, title + ' (' + total + ')'));
+        d.appendChild(el('p', { class: 'sub' }, intro));
+        var ul = el('ul');
+        entries.forEach(function (u) {
+          var li = el('li');
+          li.appendChild(el('span', { class: 'path' }, u.file));
+          if (reasons) { li.appendChild(el('div', { class: 'sub' }, reasons[u.reason] || u.reason)); }
+          ul.appendChild(li);
+        });
+        if (total > entries.length) { ul.appendChild(el('li', { class: 'sub' }, '… and ' + (total - entries.length) + ' more')); }
+        d.appendChild(ul);
+        return d;
+      };
+      if (rec.timing.untimedTotal > 0) {
+        box.appendChild(untimedList('not-timed', 'Not timed', 'These classes ran during the request, but their methods are not timed. The time they took is counted inside whatever called them, so the timeline can look emptier than what really happened.', rec.timing.untimed, rec.timing.untimedTotal, true, NOT_TIMED));
+      }
+      if (rec.timing.earlyTotal > 0) {
+        box.appendChild(untimedList('early-boot', 'Loaded before timing started', 'Service providers and other classes that PHP loads while the application boots are loaded before BlastRadius can time them. This is normal in every app; it only matters if one of them does slow work while the request runs.', rec.timing.early, rec.timing.earlyTotal, false, null));
+      }
     }
 
     if (rec.files.length) {
