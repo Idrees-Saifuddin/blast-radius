@@ -1,8 +1,12 @@
 # BlastRadius
 
 [![CI](https://github.com/Idrees-Saifuddin/blast-radius/actions/workflows/ci.yml/badge.svg)](https://github.com/Idrees-Saifuddin/blast-radius/actions/workflows/ci.yml)
+[![Packagist](https://img.shields.io/packagist/v/idrees-saifuddin/blast-radius)](https://packagist.org/packages/idrees-saifuddin/blast-radius)
+[![License](https://img.shields.io/github/license/Idrees-Saifuddin/blast-radius)](LICENSE)
 
 **See what your Laravel code does, and what a change can break, in your browser.**
+
+![BlastRadius: live requests, a failed query, the code flow and a change-impact report](docs/images/blastradius.gif)
 
 BlastRadius reads your application and shows it as a picture: which routes, jobs, listeners and
 commands reach which functions. It tells you what a git diff can affect, which tests to run, and,
@@ -13,8 +17,9 @@ It is a development tool in the spirit of Telescope and Debugbar, with one diffe
 shows is connected to your code, so "this route is slow" and "this change affects that route" are
 answers from the same place.
 
-> **Status: v0.1, pre-release.** Everything below works and is tested. It is not on Packagist yet; see
-> [Installing before the release](#installing-before-the-release).
+> **Status: early release (0.1.x).** Everything below works and is tested, but it has only been used on
+> a handful of real apps, so expect rough edges. Please
+> [open an issue](https://github.com/Idrees-Saifuddin/blast-radius/issues) when something breaks.
 
 ## What you get
 
@@ -37,15 +42,6 @@ extension, no config file.
 - In **production it stays off** unless you set `BLASTRADIUS_ENABLED=true`, so you can look at
   production on purpose and never by accident.
 - Install it with `--dev` so a normal production deploy (`composer install --no-dev`) never ships it.
-
-### Installing before the release
-
-Until the package is on Packagist, point Composer at the repository:
-
-```bash
-composer config repositories.blastradius vcs https://github.com/Idrees-Saifuddin/blast-radius
-composer require --dev idrees-saifuddin/blast-radius:dev-main
-```
 
 ## Requirements
 
@@ -83,6 +79,18 @@ of seconds.
   slowest queries and functions, the directories your time went to, the models loaded and the files
   loaded.
 
+![Live requests: pages on the left, the timeline of one call in the middle, its slowest queries on the right](docs/images/live-requests.png)
+
+Click a query to see its SQL, the rows it returned or changed, the time, and the line of your code
+that ran it:
+
+![A query selected: the full SQL, rows affected, time and where it was called](docs/images/query-detail.png)
+
+When something fails, the page turns red and the right side shows the exception, the failing query and
+the line of your code involved:
+
+![A failed request: the exception, the failing query and the line of code](docs/images/failed-request.png)
+
 ```
 ▾ /dashboard/products                                  166 ms
     GET /api/products                    200    56 ms
@@ -117,6 +125,8 @@ who calls it, what it calls, and which tests executed it. Add a branch name next
 since" (or `?base=main` to the URL) to highlight what a branch changed and flag the entry points it
 affects.
 
+![Code flow of GET /api/sales: solid green links are confirmed, dashed orange are possible, dotted red are unresolved](docs/images/code-flow.png)
+
 Prefer a file you can send to someone? `php artisan blast:report --out=blast-report.html` writes the
 same page as one self-contained HTML file (no server, nothing fetched from the internet).
 
@@ -129,6 +139,8 @@ php artisan blast --base=main
 compares your branch with `main` (the merge-base, like a pull request), finds the methods you changed,
 and follows callers back to the routes, jobs, listeners, commands and scheduled tasks that can reach
 them.
+
+![php artisan blast on a real project: 17 changed functions and the 14 routes that can reach them](docs/images/impact.png)
 
 ```
 Changed: App\Services\SupplierService::update   (modified)
