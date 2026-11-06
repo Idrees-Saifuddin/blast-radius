@@ -218,7 +218,7 @@ Almost nothing needs configuring. These environment variables exist:
 For more, publish the config file: `php artisan vendor:publish --tag=blastradius-config`. It lets you
 change the folders analysed (`paths`, `excludes`), the folders whose functions are timed
 (`runtime.paths`, default `app`), request paths to ignore (`runtime.except`), how many requests to
-keep (`runtime.keep`, default 300), the page's middleware, and where the cache is stored.
+keep (`runtime.keep`, default 300, and `runtime.keep_per_route`, default 30, so a page that polls one endpoint cannot push everything else out), the page's middleware, and where the cache is stored.
 
 ## Safe on live sites
 

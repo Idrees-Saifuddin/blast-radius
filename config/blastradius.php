@@ -47,6 +47,7 @@ return [
         'paths' => ['app'],
         'except' => [],          // request paths to ignore, e.g. ['up', 'horizon/*']
         'keep' => 300,           // how many requests to remember
+        'keep_per_route' => 30,  // at most this many successful calls of one route, so polling cannot push everything else out
         'store' => null,         // null: storage/framework/cache/blastradius/requests.sqlite
     ],
 

@@ -51,7 +51,11 @@ final class RecordRequest
         }
 
         try {
-            (new RequestStore(GraphSettings::requestStorePath(app())))->add($record, max(20, (int) config('blastradius.runtime.keep', 300)));
+            (new RequestStore(GraphSettings::requestStorePath(app())))->add(
+                $record,
+                max(20, (int) config('blastradius.runtime.keep', 300)),
+                max(5, (int) config('blastradius.runtime.keep_per_route', 30)),
+            );
         } catch (Throwable) {
             // Recording is a convenience; it must never break the application.
         }

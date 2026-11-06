@@ -40,12 +40,19 @@ final class RequestStore
         if (! in_array('page_origin', $columns, true)) {
             $this->pdo->exec('ALTER TABLE requests ADD COLUMN page_origin TEXT');
         }
+
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS requests_route ON requests (method, route, id)');
     }
 
     /**
+     * Stores a request and, now and then, forgets old ones: first the surplus of any one route (a
+     * page polling the same endpoint every few seconds would otherwise push every other request
+     * out), then whatever is older than the newest `$keep`. Failed requests are exempt from the
+     * per-route limit, so an error is not lost among the polling.
+     *
      * @param  array<string, mixed>  $record
      */
-    public function add(array $record, int $keep = 300): int
+    public function add(array $record, int $keep = 300, int $perRoute = 30): int
     {
         /** @var list<array<string, mixed>> $queries */
         $queries = (array) ($record['queries'] ?? []);
@@ -65,6 +72,16 @@ final class RequestStore
         $id = (int) $this->pdo->lastInsertId();
 
         if ($id % 20 === 0) {
+            $this->pdo->prepare('
+                DELETE FROM requests
+                WHERE status < 400 AND errors = 0 AND failed_queries = 0
+                AND (
+                    SELECT COUNT(*) FROM requests newer
+                    WHERE newer.method = requests.method
+                    AND COALESCE(newer.route, newer.path) = COALESCE(requests.route, requests.path)
+                    AND newer.id > requests.id
+                ) >= CAST(? AS INTEGER)
+            ')->execute([$perRoute]);
             $this->pdo->prepare('DELETE FROM requests WHERE id <= ?')->execute([$id - $keep]);
         }
 

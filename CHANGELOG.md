@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] - 2026-11-06
+
+### Fixed
+- Live requests: a page that polls one endpoint (a notification counter, say) no longer pushes every
+  other request out of the 300 that are remembered. At most `runtime.keep_per_route` (default 30)
+  successful calls of one route are kept; failed requests are always kept until they age out.
+
+### Added
+- `SECURITY.md`: how to report a vulnerability privately.
+
 ## [0.1.2] - 2026-11-05
 
 ### Fixed
